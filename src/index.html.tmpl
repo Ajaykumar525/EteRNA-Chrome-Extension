@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>EternaJS</title>
+
+    <!--
+    These scripts are all grabbed from https://github.com/EteRNAgame/website/tree/master/frontend
+    -->
+
+    <link type="text/css" rel="stylesheet" media="all" href="./frontend/themes/css/eterna.css" />
+
+    <script>
+        __comment_bak = Comment;
+    </script>
+
+    <script src="./frontend/jscripts/jquery/jquery-1.7.2.min.js"></script>
+    <script src="./frontend/jscripts/jquery/jquery-unselectable.js"></script>
+    <script src="./frontend/jscripts/jquery-ui/jquery-ui-1.8.7.custom.min.js"></script>
+    <script src="./frontend/jscripts/json/json2.js"></script>
+
+    <script src="./frontend/jscripts/application.js"></script>
+    <script src="./frontend/jscripts/utils.js"></script>
+    <script src="./frontend/jscripts/ajaxmanager.js"></script>
+    <script src="./frontend/jscripts/datamanager.js"></script>
+    <script src="./frontend/jscripts/usermanager.js"></script>
+
+    <script src="./frontend/jscripts/eterna/eterna-application.js"></script>
+    <script src="./frontend/jscripts/eterna/eterna-utils.js"></script>
+    <script src="./frontend/jscripts/eterna/script-library.js"></script>
+    <script src="./frontend/jscripts/eterna/script-interface.js"></script>
+    <script src="./frontend/jscripts/eterna/presenter.js"></script>
+
+    <script>
+        // The Coffeescript code exposes a Comment object, which clobbers a browser global, which we do not use,
+        // but the browser global is used by DOMPurify
+        Comment = __comment_bak;
+    </script>
+</head>
+<body style="margin: 0; padding: 0; height: 100%;">
+
+<!-- Scripts expect that an element with "maingame" will exist, so this name shouldn't be changed -->
+<div id="maingame"></div>
+
+<!-- In-game chat. Hidden to begin with; the game is in charge of displaying it -->
+<div id="chat-container" class="ingame-chat hidden">
+</div>
+
+<!-- Load our webpack bundles -->
+<%= htmlWebpackPlugin.tags.bodyTags %>
+
+<script>
+    Application.GET_URI = "<%= htmlWebpackPlugin.options.process.env.APP_SERVER_URL %>/get/";
+    Application.POST_URI = "<%= htmlWebpackPlugin.options.process.env.APP_SERVER_URL %>/get/";
+
+    const params = new URLSearchParams(window.location.search);
+    const numberParam = (name) => params.has(name) ? Number(params.get(name)) : undefined;
+
+    const containerID = "maingame";
+    const appContainer = document.getElementById(containerID);
+
+    let designBrowserFilters = [];
+    for (let ii = 1; ; ++ii) {
+        let filterName = "filter" + ii;
+        if (params.has(filterName)) {
+            designBrowserFilters.push({
+                category: params.get(filterName),
+                arg1: params.get(filterName + "_arg1"),
+                arg2: params.get(filterName + "_arg2"),
+            });
+        } else {
+            break;
+        }
+    }
+
+    const app = new EternaApp({
+        containerID: containerID,
+        chatboxID: "chat-container",
+        width: appContainer.clientWidth,
+        height: appContainer.clientHeight,
+
+        mode: params.get("mode"),
+        puzzleID: numberParam("puzzle"),
+        solutionID: numberParam("solution"),
+        puzzleEditNumTargets: numberParam("puzzleEditNumTargets"),
+        folderName: params.get("folder"),
+        sequence: params.get("sequence"),
+        designBrowserFilters: designBrowserFilters,
+    });
+    window.app = app;
+    app.run();
+
+    window.addEventListener("resize", () => {
+        app.resize(appContainer.clientWidth, appContainer.clientHeight);
+    });
+</script>
+</body>
+</html>
